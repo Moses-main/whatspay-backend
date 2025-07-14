@@ -8,6 +8,7 @@ const winston = require("winston");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes.js");
+const pool = require("./config/pool.js");
 // const sequelize = require("./config/database.js");
 // const whatsappRoutes = require("./routes/whatsapp");
 // const walletRoutes = require("./routes/wallet");
@@ -42,23 +43,23 @@ const logger = winston.createLogger({
 });
 
 // Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
-});
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl:
+//     process.env.NODE_ENV === "production"
+//       ? { rejectUnauthorized: false }
+//       : false,
+// });
 
-// Test database connection
-pool.connect((err, client, release) => {
-  if (err) {
-    logger.error("Error connecting to database:", err);
-    process.exit(1);
-  }
-  logger.info("Connected to PostgreSQL database");
-  release();
-});
+// // Test database connection
+// pool.connect((err, client, release) => {
+//   if (err) {
+//     logger.error("Error connecting to database:", err);
+//     process.exit(1);
+//   }
+//   logger.info("Connected to PostgreSQL database");
+//   release();
+// });
 
 // =====================================================
 // ALTERNATIVE TO CONNECTING TO THE DATABASE
@@ -71,7 +72,7 @@ pool.connect((err, client, release) => {
 // =======================================================
 
 // Make pool available globally
-global.db = pool;
+global.db = pool; // connect with the database
 global.logger = logger;
 
 // Routes
