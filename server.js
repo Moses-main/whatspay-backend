@@ -1,8 +1,13 @@
+const dotenv = require("dotenv");
+
+// Load environment variables
+dotenv.config();
+
 // server.js - Main application entry point
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-const dotenv = require("dotenv");
+
 const { Pool } = require("pg");
 const winston = require("winston");
 
@@ -14,9 +19,6 @@ const pool = require("./config/pool.js");
 // const walletRoutes = require("./routes/wallet");
 // const transactionRoutes = require("./routes/transactions");
 // const webhookRoutes = require("./routes/webhooks.js");
-
-// Load environment variables
-dotenv.config();
 
 // Initialize Express app
 const app = express();

@@ -16,14 +16,31 @@ const logger = winston.createLogger({
 });
 
 // Create pool using DATABASE_URL
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl:
+//     process.env.NODE_ENV === "production"
+//       ? { rejectUnauthorized: false }
+//       : false,
+// });
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT, 10),
+
   ssl:
     process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
+      ? {
+          rejectUnauthorized: false,
+        }
       : false,
 });
 
+// test the connection string
+console.log("DATABASE_URL =", process.env.DATABASE_URL);
 // Test connection
 pool.connect((err, client, release) => {
   if (err) {
