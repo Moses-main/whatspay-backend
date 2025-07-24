@@ -7,6 +7,7 @@ dotenv.config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const { sequelize } = require("./models/index.js");
 
 const { Pool } = require("pg");
 const winston = require("winston");
@@ -14,6 +15,7 @@ const winston = require("winston");
 // Import routes
 const authRoutes = require("./routes/authRoutes.js");
 const pool = require("./config/pool.js");
+const userRoutes = require("./routes/TESTing/userRoutes.js");
 // const sequelize = require("./config/database.js");
 // const whatsappRoutes = require("./routes/whatsapp");
 // const walletRoutes = require("./routes/wallet");
@@ -77,8 +79,24 @@ const logger = winston.createLogger({
 global.db = pool; // connect with the database
 global.logger = logger;
 
+// Sync the DB
+
+sequelize
+  .sync({
+    alter: true,
+  })
+  // or { force: true } to drop and recreate
+
+  .then(() => {
+    console.log("✅ All models synced to the database");
+  })
+  .catch((err) => {
+    console.error("❌ Error syncing models:", err);
+  });
+
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/", userRoutes);
 // app.use("/api/whatsapp", whatsappRoutes);
 // app.use("/api/wallet", walletRoutes);
 // app.use("/api/transactions", transactionRoutes);

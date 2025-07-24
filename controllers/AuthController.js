@@ -4,7 +4,7 @@ const AuthService = require("../services/AuthService");
 exports.signup = async (req, res) => {
   const { name, phone, email, password } = req.body;
 
-  if (!name || !phone || !email || !password) {
+if (!name || !phone || !email || !password) {
     return res.status(400).json({
       error: "All fields are required: name, phone, email, password.",
     });

@@ -27,7 +27,12 @@ const User = sequelize.define("User", {
     type: DataTypes.STRING,
   },
   encrypted_private_key: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
+    //text for longer encrypted strings
+  },
+  encrypted_mnemonic: {
+    type: DataTypes.TEXT,
+    // Encrypted mnemonic
   },
   reset_token: {
     type: DataTypes.STRING,
