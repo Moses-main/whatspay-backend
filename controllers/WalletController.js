@@ -1,4 +1,5 @@
 const WalletService = require("../services/WalletService");
+const axios = require("axios");
 
 async function getBalance(req, res) {
   try {
