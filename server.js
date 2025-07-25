@@ -14,11 +14,13 @@ const winston = require("winston");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes.js");
+const walletRoutes = require("./routes/walletRoutes.js");
 const pool = require("./config/pool.js");
-const userRoutes = require("./routes/TESTing/userRoutes.js");
+
+// const userRoutes = require("./routes/TESTing/userRoutes.js");
 // const sequelize = require("./config/database.js");
 // const whatsappRoutes = require("./routes/whatsapp");
-// const walletRoutes = require("./routes/wallet");
+
 // const transactionRoutes = require("./routes/transactions");
 // const webhookRoutes = require("./routes/webhooks.js");
 
@@ -96,9 +98,9 @@ sequelize
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/", userRoutes);
+// app.use("/api/", userRoutes);
 // app.use("/api/whatsapp", whatsappRoutes);
-// app.use("/api/wallet", walletRoutes);
+app.use("/api/wallet", walletRoutes);
 // app.use("/api/transactions", transactionRoutes);
 // app.use("/webhooks", webhookRoutes);
 

@@ -40,6 +40,7 @@ class WalletService {
     decrypted += decipher.final("utf8");
     return decrypted;
   }
+
   static async encryptMnemonic(mnemonic) {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv("aes-256-cbc", ENCRYPTION_KEY, iv);
@@ -189,102 +190,159 @@ class WalletService {
    * Note: Ethereum JSON-RPC doesn't provide this; you'd need to use third-party APIs
    * This is a placeholder showing you how to integrate (e.g., with BscScan API)
    */
+  // static async getTransactionHistory(address, network) {
+  //   throw new Error(
+  //     "Transaction history requires external API integration (e.g., BscScan or Base Explorer API)"
+  //   );
+  // }
+
+  /**
+   * Fetch transaction history for an address from Covalent API
+   * 
+@param
+ {
+string
+} 
+address
+ - Wallet address
+   * 
+@param
+ {
+"bsc"|"base"
+} 
+network
+ - Network to query
+   * 
+@returns
+ {
+Promise<Object[]>
+} Array of transaction objects
+   */
+
+  // static async getTransactionHistory(address, network) {
+  //   const net = this.NETWORKS[network];
+  //   const COVALENT_API_KEY = process.env.COVALENT_API_KEY;
+
+  //   if (!net) throw new Error(`Unsupported network: ${network}`);
+
+  //   const url = `https://api.covalenthq.com/v1/${net.chainId} /address/ ${address} /transactions_v2/?key=${COVALENT_API_KEY}`;
+
+  //   try {
+  //     const { data } = await axios.get(url);
+
+  //     if (!data || !data.data || !data.data.items) {
+  //       return { transactions: [], message: "No transactions found" };
+  //     }
+
+  //     return data.data.items.map((tx) => ({
+  //       hash: tx.tx_hash,
+
+  //       from: tx.from_address,
+  //       to: tx.to_address,
+  //       value: tx.value,
+  //       // in wei
+
+  //       value_in_eth: tx.value / 1e18,
+  //       gas_price: tx.gas_price,
+  //       block_signed_at: tx.block_signed_at,
+  //       success: tx.successful,
+  //     }));
+  //   } catch (err) {
+  //     console.error("Error fetching transaction history:", err.message);
+
+  //     throw new Error("Unable to fetch transaction history");
+  //   }
+  // }
+
+  // static async getTransactionHistory(address, network) {
+  //   const net = this.NETWORKS[network];
+  //   const COVALENT_API_KEY = process.env.COVALENT_API_KEY;
+
+  //   if (!net) throw new Error(`Unsupported network: ${network}`);
+
+  //   // Correct endpoint: transactions_summary
+  //   const url = `https://api.covalenthq.com/v1/${net.name}/address/${address}/transactions_summary/`;
+
+  //   try {
+  //     const { data } = await axios.get(url, {
+  //       headers: {
+  //         Authorization: `Bearer ${COVALENT_API_KEY}`,
+  //       },
+  //     });
+
+  //     if (!data || !data.data || !data.data.items) {
+  //       return { transactions: [], message: "No transactions found" };
+  //     }
+
+  //     // Modify mapping if transactions_summary response structure differs
+  //     return data.data.items.map((tx) => ({
+  //       hash: tx.tx_hash,
+  //       from: tx.from_address,
+  //       to: tx.to_address,
+  //       value: tx.value,
+  //       value_in_eth: tx.value / 1e18,
+  //       gas_price: tx.gas_price,
+  //       block_signed_at: tx.block_signed_at,
+  //       success: tx.successful,
+  //     }));
+  //   } catch (err) {
+  //     console.error("Error fetching transaction history:", err.message);
+  //     throw new Error("Unable to fetch transaction history");
+  //   }
+  // }
+
   static async getTransactionHistory(address, network) {
-    throw new Error(
-      "Transaction history requires external API integration (e.g., BscScan or Base Explorer API)"
-    );
+    const net = this.NETWORKS[network];
+    const COVALENT_API_KEY = process.env.COVALENT_API_KEY;
+
+    if (!net) throw new Error(`Unsupported network: ${network}`);
+
+    const url = `https://api.covalenthq.com/v1/${net.name}/address/${address}/transactions_summary/`;
+
+    try {
+      const { data } = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${COVALENT_API_KEY}`,
+        },
+      });
+
+      if (
+        !data ||
+        !data.data ||
+        !data.data.items ||
+        data.data.items.length === 0
+      ) {
+        return { summary: {}, message: "No transaction summary found" };
+      }
+
+      // Transform response to a cleaner format
+      return data.data.items.map((item) => ({
+        total_transactions: item.total_count,
+        total_transfers: item.transfer_count,
+        earliest_transaction: item.earliest_transaction
+          ? {
+              tx_hash: item.earliest_transaction.tx_hash,
+              block_signed_at: item.earliest_transaction.block_signed_at,
+              tx_detail_link: item.earliest_transaction.tx_detail_link,
+            }
+          : null,
+        latest_transaction: item.latest_transaction || null,
+        gas_summary: item.gas_summary
+          ? {
+              total_sent_count: item.gas_summary.total_sent_count,
+              total_fees_paid: item.gas_summary.total_fees_paid,
+              total_gas_quote: item.gas_summary.total_gas_quote,
+              average_gas_quote_per_tx:
+                item.gas_summary.average_gas_quote_per_tx,
+              gas_metadata: item.gas_summary.gas_metadata,
+            }
+          : null,
+      }));
+    } catch (err) {
+      console.error("Error fetching transaction history:", err.message);
+      throw new Error("Unable to fetch transaction summary");
+    }
   }
 }
 
 module.exports = WalletService;
-
-// // ===== SERVICES =====
-
-// // Import required libraries
-// const { ethers } = require("ethers"); // Ethers.js for wallet creation and blockchain interactions
-// const crypto = require("crypto"); // Node.js built-in module for encryption/decryption
-
-// class WalletService {
-//   constructor() {
-//     // Create a JSON-RPC provider using the Binance Smart Chain RPC URL from environment variables
-//     this.provider = new ethers.providers.JsonRpcProvider(
-//       process.env.BSC_RPC_URL
-//     );
-
-//     // Load the wallet encryption key from environment variables
-//     this.encryptionKey = process.env.WALLET_ENCRYPTION_KEY;
-//   }
-
-//   // Generates a new Ethereum wallet using Ethers.js
-//   generateWallet() {
-//     const wallet = ethers.Wallet.createRandom(); // Randomly generate wallet with mnemonic
-//     return {
-//       address: wallet.address, // Public wallet address
-//       privateKey: wallet.privateKey, // Sensitive private key
-//       mnemonic: wallet.mnemonic.phrase, // Backup phrase (usually 12 words)
-//     };
-//   }
-
-//   // Encrypt the private key using AES-256-CBC symmetric encryption
-//   async encryptPrivateKey(privateKey) {
-//     const cipher = crypto.createCipher("aes-256-cbc", this.encryptionKey); // Create cipher with encryption key
-//     let encrypted = cipher.update(privateKey, "utf8", "hex"); // Encrypt in utf8 and convert to hex
-//     encrypted += cipher.final("hex"); // Complete encryption
-//     return encrypted; // Return encrypted private key
-//   }
-
-//   // Decrypt the private key
-//   async decryptPrivateKey(encryptedKey) {
-//     const decipher = crypto.createDecipher("aes-256-cbc", this.encryptionKey); // Create decipher with same key
-//     let decrypted = decipher.update(encryptedKey, "hex", "utf8"); // Convert from hex to utf8
-//     decrypted += decipher.final("utf8"); // Complete decryption
-//     return decrypted; // Return the original private key
-//   }
-
-//   // Creates a wallet for a user and saves it in the database
-//   async createUserWallet(phoneNumber) {
-//     try {
-//       // Step 1: Generate wallet (public address, private key, mnemonic)
-//       const walletData = this.generateWallet();
-
-//       // Step 2: Encrypt the private key before saving to DB
-//       const encryptedPrivateKey = await this.encryptPrivateKey(
-//         walletData.privateKey
-//       );
-
-//       // Step 3: Insert the user and their wallet data into the 'users' table
-//       const query = `
-//         INSERT INTO users (phone_number, wallet_address, encrypted_private_key)
-//         VALUES ($1, $2, $3)
-//         RETURNING id, phone_number, wallet_address, created_at
-//       `;
-
-//       console.log(
-//         `${phoneNumber} is the phone number attached with the address \n ${walletData.address} is the address \n ${encryptedPrivateKey} is the private key`
-//       );
-
-//       // You must have a `db` instance connected to your database (PostgreSQL assumed here)
-//       const result = await db.query(query, [
-//         phoneNumber,
-//         walletData.address,
-//         encryptedPrivateKey,
-//       ]);
-
-//       // Return inserted user wallet data
-//       return result.rows[0];
-//     } catch (error) {
-//       logger.error("Error creating user wallet:", error); // Log the error
-//       throw error; // Re-throw for higher-level handling
-//     }
-//   }
-
-//   // Retrieve a user's wallet details by their phone number
-//   async getUserByPhoneNumber(phoneNumber) {
-//     const query = "SELECT * FROM users WHERE phone_number = $1";
-//     const result = await db.query(query, [phoneNumber]);
-//     return result.rows[0] || null; // Return the result or null if not found
-//   }
-// }
-
-// // Export the service class so it can be used in controllers or other services
-// module.exports = WalletService;

@@ -8,6 +8,7 @@ router.post("/register", AuthController.signup);
 router.post("/login", AuthController.login);
 router.post("/forgot-password", AuthController.forgotPassword);
 router.post("/reset-password", AuthController.resetPassword);
+router.post("/me", authMiddleware, AuthController.getMe);
 
 // getDecrypted Mnemonic
 router.get("/wallet/mnemonic", authMiddleware, GetMnemonic.getMnemonic);

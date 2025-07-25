@@ -66,3 +66,76 @@ exports.login = async (phone, password) => {
   const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "1d" });
   return { message: "Login successful", token };
 };
+
+// exports.getMe = async (userId) => {
+//   const user = await User.findByPk(userId, {
+//     attributes: { exclude: ["password"] },
+//   });
+
+//   if (!user) throw new Error("User not found");
+
+//   const userData = user.get({
+//     plain: true,
+//   });
+
+//   // Optionally get balance
+
+//   if (userData.wallet_address) {
+//     try {
+//       userData.balance = await WalletService.getBalance(
+//         userData.wallet_address,
+//         "bsc"
+//       );
+//     } catch (err) {
+//       console.error("Error fetching balance:", err);
+//       userData.balance = "Unable to fetch balance";
+//     }
+//   }
+
+//   return userData;
+// };
+
+exports.getMe = async (userId, network = "base") => {
+  const user = await User.findByPk(userId, {
+    attributes: { exclude: ["password"] },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const userData = user.get({
+    plain: true,
+  });
+
+  // Decrypt private key if it exists
+
+  if (userData.encrypted_private_key) {
+    try {
+      userData.privateKey = await WalletService.decryptPrivateKey(
+        userData.encrypted_private_key
+      );
+    } catch (err) {
+      console.error("Error decrypting private key:", err);
+      userData.privateKey = "Unable to decrypt private key";
+    }
+  } else {
+    userData.privateKey = null;
+  }
+
+  // Fetch wallet balance
+
+  if (userData.wallet_address) {
+    try {
+      userData.balance = await WalletService.getBalance(
+        userData.wallet_address,
+        network
+      );
+      userData.network = network;
+      // Add network to response
+    } catch (err) {
+      console.error("Error fetching balance:", err);
+      userData.balance = "Unable to fetch balance";
+    }
+  }
+
+  return userData;
+};

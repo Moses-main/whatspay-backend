@@ -4,7 +4,7 @@ const AuthService = require("../services/AuthService");
 exports.signup = async (req, res) => {
   const { name, phone, email, password } = req.body;
 
-if (!name || !phone || !email || !password) {
+  if (!name || !phone || !email || !password) {
     return res.status(400).json({
       error: "All fields are required: name, phone, email, password.",
     });
@@ -68,5 +68,36 @@ exports.resetPassword = async (req, res) => {
     res.status(200).json({ message: "Password has been reset successfully." });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+};
+
+// exports.getMe = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     // Injected by authMiddleware
+
+//     const userData = await AuthService.getMe(userId);
+//     res.status(200).json(userData);
+//   } catch (err) {
+//     console.error("GetMe error:", err);
+//     res.status(400).json({
+//       error: err.message,
+//     });
+//   }
+// };
+
+exports.getMe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const network = req.query.network || "bsc";
+    // default to bsc if not provided
+
+    const userData = await AuthService.getMe(userId, network);
+    res.status(200).json(userData);
+  } catch (err) {
+    console.error("GetMe error:", err);
+    res.status(400).json({
+      error: err.message,
+    });
   }
 };
