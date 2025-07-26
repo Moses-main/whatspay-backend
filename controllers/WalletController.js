@@ -1,87 +1,103 @@
-const WalletService = require("../services/WalletService");
 const axios = require("axios");
+const WalletService = require("../services/WalletService");
 
+/**
+ * Get balance using phone number or wallet address
+ */
 async function getBalance(req, res) {
   try {
-    const { address, network } = req.body;
-    if (!address || !network) {
-      return res.status(400).json({ error: "address and network required" });
+    const { identifier, network } = req.body; // identifier = phoneNumber or wallet address
+    if (!identifier || !network) {
+      return res.status(400).json({ error: "identifier and network required" });
     }
 
-    const balance = await WalletService.getBalance(address, network);
-    res.json({ address, network, balance });
+    const balance = await WalletService.getBalanceUniversal(
+      identifier,
+      network
+    );
+    res.json({ identifier, network, balance });
   } catch (err) {
     console.error("Get balance error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message || "Internal server error" });
   }
 }
 
+/**
+ * Send transaction using phone number or wallet address
+ */
 async function sendTransaction(req, res) {
   try {
-    const { privateKey, toAddress, amount, network } = req.body;
-    if (!privateKey || !toAddress || !amount || !network) {
+    const { sender, recipient, amount, network } = req.body;
+    if (!sender || !recipient || !amount || !network) {
       return res.status(400).json({
-        error: "privateKey, toAddress, amount, network required",
+        error: "sender, recipient, amount, network required",
       });
     }
 
-    const txHash = await WalletService.sendTransaction(
-      privateKey,
-      toAddress,
+    const txHash = await WalletService.sendTransactionUniversal(
+      sender,
+      recipient,
       amount,
       network
     );
     res.json({ txHash });
   } catch (err) {
     console.error("Send transaction error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message || "Internal server error" });
   }
 }
 
+/**
+ * Watch incoming transactions
+ */
 function watchIncoming(req, res) {
   try {
-    const { address, network } = req.body;
-    if (!address || !network) {
-      return res.status(400).json({ error: "address and network required" });
+    const { identifier, network } = req.body;
+    if (!identifier || !network) {
+      return res.status(400).json({ error: "identifier and network required" });
     }
 
-    const stopWatching = WalletService.watchIncomingTransactions(
-      address,
-      network,
-      (tx) => {
-        console.log(`Incoming tx on ${network}:`, tx);
-      }
-    );
+    // Resolve wallet first
+    WalletService.resolveWallet(identifier).then(({ wallet_address }) => {
+      const stopWatching = WalletService.watchIncomingTransactions(
+        wallet_address,
+        network,
+        (tx) => console.log(`Incoming tx on ${network}:`, tx)
+      );
 
-    setTimeout(() => {
-      stopWatching();
-      console.log(`Stopped watching ${address} on ${network}`);
-    }, 60000);
+      setTimeout(() => {
+        stopWatching();
+        console.log(`Stopped watching ${wallet_address} on ${network}`);
+      }, 60000);
 
-    res.json({
-      message: `Started watching incoming txs for ${address} on ${network} for 60 seconds`,
+      res.json({
+        message: `Started watching incoming txs for ${identifier} on ${network} for 60 seconds`,
+      });
     });
   } catch (err) {
     console.error("Watch incoming error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message || "Internal server error" });
   }
 }
 
-// get the transaction history
+/**
+ * Get transaction history
+ */
+
 async function getTransactionHistory(req, res) {
   try {
-    const { address, network } = req.query;
-    if (!address) {
+    const { identifier, network } = req.query;
+    if (!identifier) {
       return res.status(400).json({
-        error: "Wallet address is required",
+        error: "identifier (phone number or wallet address) is required",
       });
     }
 
+    const { wallet_address } = await WalletService.resolveWallet(identifier);
     const history = await WalletService.getTransactionHistory(
-      address,
-      network || "base"
+      wallet_address,
+      network || "bsc"
     );
-    // default network: bsc
 
     return res.json({
       success: true,
@@ -89,12 +105,12 @@ async function getTransactionHistory(req, res) {
     });
   } catch (err) {
     console.error("Error in controller:", err.message);
-
     return res.status(500).json({
       error: "Failed to fetch transaction history",
     });
   }
 }
+
 module.exports = {
   getBalance,
   sendTransaction,

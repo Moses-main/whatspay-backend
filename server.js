@@ -15,6 +15,7 @@ const winston = require("winston");
 // Import routes
 const authRoutes = require("./routes/authRoutes.js");
 const walletRoutes = require("./routes/walletRoutes.js");
+const transactRoutes = require("./routes/transactionRoutes.js");
 const pool = require("./config/pool.js");
 
 // const userRoutes = require("./routes/TESTing/userRoutes.js");
@@ -101,7 +102,7 @@ app.use("/api/auth", authRoutes);
 // app.use("/api/", userRoutes);
 // app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/wallet", walletRoutes);
-// app.use("/api/transactions", transactionRoutes);
+app.use("/api/transactions", transactRoutes);
 // app.use("/webhooks", webhookRoutes);
 
 // Health check endpoint

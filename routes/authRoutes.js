@@ -10,6 +10,9 @@ router.post("/forgot-password", AuthController.forgotPassword);
 router.post("/reset-password", AuthController.resetPassword);
 router.post("/me", authMiddleware, AuthController.getMe);
 
+router.get("/auth/github", AuthController.githubLogin);
+router.get("/auth/github/callback", AuthController.githubCallback);
+
 // getDecrypted Mnemonic
 router.get("/wallet/mnemonic", authMiddleware, GetMnemonic.getMnemonic);
 module.exports = router;

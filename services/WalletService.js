@@ -1,5 +1,6 @@
 const { ethers } = require("ethers");
 const crypto = require("crypto");
+const { User } = require("../models/User");
 const axios = require("axios");
 
 const ENCRYPTION_KEY = crypto
@@ -57,6 +58,100 @@ class WalletService {
     let decrypted = decipher.update(encrypted, "hex", "utf8");
     decrypted += decipher.final("utf8");
     return decrypted;
+  }
+
+  // =======================================================================
+
+  /**
+   * Identify if input is a phone number or a wallet address
+   */
+  static async resolveWallet(identifier) {
+    // Simple check: Ethereum addresses start with '0x'
+    if (identifier.startsWith("0x")) {
+      return { wallet_address: identifier };
+    }
+
+    // Otherwise, assume it's a phone number and look up in DB
+    const user = await User.findOne({ where: { phoneNumber: identifier } });
+    if (!user) throw new Error("User not found");
+    return { wallet_address: user.wallet_address, user };
+  }
+
+  /**
+   * Get balance by wallet address or phone number
+   */
+  static async getBalanceUniversal(identifier, network) {
+    const { wallet_address } = await this.resolveWallet(identifier);
+    return this.getBalance(wallet_address, network);
+  }
+
+  /**
+   * Get token balance (ERC20) by wallet address or phone number
+   */
+  static async getTokenBalanceUniversal(identifier, tokenSymbol, network) {
+    const { wallet_address } = await this.resolveWallet(identifier);
+    return this.getTokenBalance(wallet_address, tokenSymbol, network);
+  }
+
+  /**
+   * Send native token (BNB or BASE) between identifiers (phone or wallet address)
+   */
+  static async sendTransactionUniversal(
+    senderIdentifier,
+    recipientIdentifier,
+    amountEther,
+    network
+  ) {
+    const sender = await this.resolveWallet(senderIdentifier);
+    const recipient = await this.resolveWallet(recipientIdentifier);
+
+    // If senderIdentifier is a phone number, decrypt private key
+    let privateKey;
+    if (sender.user) {
+      privateKey = await this.decryptPrivateKey(
+        sender.user.encrypted_private_key
+      );
+    } else {
+      throw new Error("Cannot send from a raw address (need private key)");
+    }
+
+    return this.sendTransaction(
+      privateKey,
+      recipient.wallet_address,
+      amountEther,
+      network
+    );
+  }
+
+  /**
+   * Send ERC20 token between identifiers (phone or wallet address)
+   */
+  static async sendTokenUniversal(
+    senderIdentifier,
+    recipientIdentifier,
+    amount,
+    tokenSymbol,
+    network
+  ) {
+    const sender = await this.resolveWallet(senderIdentifier);
+    const recipient = await this.resolveWallet(recipientIdentifier);
+
+    let privateKey;
+    if (sender.user) {
+      privateKey = await this.decryptPrivateKey(
+        sender.user.encrypted_private_key
+      );
+    } else {
+      throw new Error("Cannot send from a raw address (need private key)");
+    }
+
+    return this.sendToken(
+      privateKey,
+      recipient.wallet_address,
+      amount,
+      tokenSymbol,
+      network
+    );
   }
 
   /**
@@ -191,106 +286,6 @@ class WalletService {
    * Note: Ethereum JSON-RPC doesn't provide this; you'd need to use third-party APIs
    * This is a placeholder showing you how to integrate (e.g., with BscScan API)
    */
-  // static async getTransactionHistory(address, network) {
-  //   throw new Error(
-  //     "Transaction history requires external API integration (e.g., BscScan or Base Explorer API)"
-  //   );
-  // }
-
-  /**
-   * Fetch transaction history for an address from Covalent API
-   * 
-@param
- {
-string
-} 
-address
- - Wallet address
-   * 
-@param
- {
-"bsc"|"base"
-} 
-network
- - Network to query
-   * 
-@returns
- {
-Promise<Object[]>
-} Array of transaction objects
-   */
-
-  // static async getTransactionHistory(address, network) {
-  //   const net = this.NETWORKS[network];
-  //   const COVALENT_API_KEY = process.env.COVALENT_API_KEY;
-
-  //   if (!net) throw new Error(`Unsupported network: ${network}`);
-
-  //   const url = `https://api.covalenthq.com/v1/${net.chainId} /address/ ${address} /transactions_v2/?key=${COVALENT_API_KEY}`;
-
-  //   try {
-  //     const { data } = await axios.get(url);
-
-  //     if (!data || !data.data || !data.data.items) {
-  //       return { transactions: [], message: "No transactions found" };
-  //     }
-
-  //     return data.data.items.map((tx) => ({
-  //       hash: tx.tx_hash,
-
-  //       from: tx.from_address,
-  //       to: tx.to_address,
-  //       value: tx.value,
-  //       // in wei
-
-  //       value_in_eth: tx.value / 1e18,
-  //       gas_price: tx.gas_price,
-  //       block_signed_at: tx.block_signed_at,
-  //       success: tx.successful,
-  //     }));
-  //   } catch (err) {
-  //     console.error("Error fetching transaction history:", err.message);
-
-  //     throw new Error("Unable to fetch transaction history");
-  //   }
-  // }
-
-  // static async getTransactionHistory(address, network) {
-  //   const net = this.NETWORKS[network];
-  //   const COVALENT_API_KEY = process.env.COVALENT_API_KEY;
-
-  //   if (!net) throw new Error(`Unsupported network: ${network}`);
-
-  //   // Correct endpoint: transactions_summary
-  //   const url = `https://api.covalenthq.com/v1/${net.name}/address/${address}/transactions_summary/`;
-
-  //   try {
-  //     const { data } = await axios.get(url, {
-  //       headers: {
-  //         Authorization: `Bearer ${COVALENT_API_KEY}`,
-  //       },
-  //     });
-
-  //     if (!data || !data.data || !data.data.items) {
-  //       return { transactions: [], message: "No transactions found" };
-  //     }
-
-  //     // Modify mapping if transactions_summary response structure differs
-  //     return data.data.items.map((tx) => ({
-  //       hash: tx.tx_hash,
-  //       from: tx.from_address,
-  //       to: tx.to_address,
-  //       value: tx.value,
-  //       value_in_eth: tx.value / 1e18,
-  //       gas_price: tx.gas_price,
-  //       block_signed_at: tx.block_signed_at,
-  //       success: tx.successful,
-  //     }));
-  //   } catch (err) {
-  //     console.error("Error fetching transaction history:", err.message);
-  //     throw new Error("Unable to fetch transaction history");
-  //   }
-  // }
 
   static async getTransactionHistory(address, network) {
     const net = this.NETWORKS[network];

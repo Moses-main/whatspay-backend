@@ -101,3 +101,30 @@ exports.getMe = async (req, res) => {
     });
   }
 };
+
+// Redirect user to GitHub OAuth
+
+exports.githubLogin = (req, res) => {
+  const url = AuthService.getGitHubOAuthUrl();
+  res.redirect(url);
+};
+
+// Handle callback from GitHub
+
+exports.githubCallback = async (req, res) => {
+  const code = req.query.code;
+
+  if (!code) return;
+  res.status(400).json({ error: "Missing code" });
+
+  try {
+    const result = await AuthService.handleGitHubCallback(code);
+    res.json(result);
+    // Send JWT + user data
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};

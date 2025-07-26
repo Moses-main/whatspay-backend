@@ -7,6 +7,9 @@ const { User } = require("../models/User");
 
 const SECRET = process.env.JWT_SECRET;
 
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+
 exports.register = async ({ name, phone, email, password }) => {
   // check if user already exist
   const existing = await User.findOne({ where: { phoneNumber: phone } });
@@ -25,7 +28,7 @@ exports.register = async ({ name, phone, email, password }) => {
 
   // Encrypt mnemonic before storing
 
-  const encryptedMnemonic = await WalletService.encryptPrivateKey(
+  const encryptedMnemonic = await WalletService.encryptMnemonic(
     wallet.mnemonic
   );
 
@@ -138,4 +141,103 @@ exports.getMe = async (userId, network = "base") => {
   }
 
   return userData;
+};
+
+exports.getGitHubOAuthUrl = () => {
+  return `https://github.com/login/oauth/authorize?client_id=
+${GITHUB_CLIENT_ID}
+&scope=user:email`;
+};
+
+/**
+ * Step 2: Handle GitHub OAuth Callback
+ * 
+@param
+ {
+string
+} 
+code
+ - Code returned from GitHub
+ */
+exports.handleGitHubCallback = async (code) => {
+  // Exchange code for access token
+
+  const tokenResponse = await axios.post(
+    "https://github.com/login/oauth/access_token",
+    { client_id: GITHUB_CLIENT_ID, client_secret: GITHUB_CLIENT_SECRET, code },
+    { headers: { Accept: "application/json" } }
+  );
+
+  const accessToken = tokenResponse.data.access_token;
+
+  if (!accessToken) throw new Error("Failed to retrieve GitHub access token");
+
+  // Get user info
+
+  const userResponse = await axios.get("https://api.github.com/user", {
+    headers: {
+      Authorization: `token 
+${accessToken}
+`,
+    },
+  });
+
+  const { id, login, avatar_url } = userResponse.data;
+  // Get email (sometimes email is not in /user)
+
+  let email = userResponse.data.email;
+  if (!email) {
+    const emailResponse = await axios.get(
+      "https://api.github.com/user/emails",
+      {
+        headers: {
+          Authorization: `token 
+${accessToken}
+`,
+        },
+      }
+    );
+    email = emailResponse.data.find((e) => e.primary)?.email;
+  }
+
+  // Find or create user in DB
+
+  let user = await User.findOne({
+    where: {
+      githubId: id,
+    },
+  });
+
+  if (!user) {
+    const wallet = await WalletService.createWallet();
+    user = await User.create({
+      name: login,
+      email,
+
+      githubId: id,
+
+      avatar: avatar_url,
+
+      wallet_address: wallet.address,
+      encrypted_private_key: wallet.encrypted_private_key,
+    });
+  }
+
+  // Issue JWT
+
+  const token = jwt.sign(
+    {
+      id: user.id,
+    },
+    SECRET,
+    {
+      expiresIn: "1d",
+    }
+  );
+
+  return {
+    message: "Login successful",
+    token,
+    user,
+  };
 };
