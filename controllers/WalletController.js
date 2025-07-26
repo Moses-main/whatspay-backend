@@ -93,23 +93,56 @@ async function getTransactionHistory(req, res) {
       });
     }
 
+    // Resolve phone number to wallet address if necessary
     const { wallet_address } = await WalletService.resolveWallet(identifier);
+
+    const selectedNetwork = network || "base";
     const history = await WalletService.getTransactionHistory(
       wallet_address,
-      network || "bsc"
+      selectedNetwork
     );
 
     return res.json({
       success: true,
+      network: selectedNetwork,
+      identifier,
+      wallet_address,
       data: history,
     });
   } catch (err) {
     console.error("Error in controller:", err.message);
     return res.status(500).json({
-      error: "Failed to fetch transaction history",
+      error: err.message || "Failed to fetch transaction history",
     });
   }
 }
+
+// async function getTransactionHistory(req, res) {
+//   try {
+//     const { identifier, network } = req.query;
+//     if (!identifier) {
+//       return res.status(400).json({
+//         error: "identifier (phone number or wallet address) is required",
+//       });
+//     }
+
+//     const { wallet_address } = await WalletService.resolveWallet(identifier);
+//     const history = await WalletService.getTransactionHistory(
+//       wallet_address,
+//       network || "bsc"
+//     );
+
+//     return res.json({
+//       success: true,
+//       data: history,
+//     });
+//   } catch (err) {
+//     console.error("Error in controller:", err.message);
+//     return res.status(500).json({
+//       error: "Failed to fetch transaction history",
+//     });
+//   }
+// }
 
 module.exports = {
   getBalance,

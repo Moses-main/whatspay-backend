@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "Wallet API",
+    "_postman_id": "abcd1234-5678-90ef-ghij-klmnopqrstuv",
+    "description": "API collection for Authentication and Wallet Transactions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Moses\",\n  \"phone\": \"+2348101234567\",\n  \"email\": \"moses@example.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+2348101234567\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Wallet - Get Balance",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"identifier\": \"+2348101234567\",\n  \"network\": \"bsc\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/wallet/balance",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "wallet", "balance"]
+        }
+      }
+    },
+    {
+      "name": "Wallet - Send Transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sender\": \"+2348101234567\",\n  \"recipient\": \"0xRecipientWalletAddress\",\n  \"amount\": \"0.01\",\n  \"network\": \"bsc\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/wallet/send",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "wallet", "send"]
+        }
+      }
+    },
+    {
+      "name": "Wallet - Get Transaction History",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "http://localhost:3000/api/wallet/history?identifier=+2348101234567&network=bsc",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "wallet", "history"],
+          "query": [
+            { "key": "identifier", "value": "+2348101234567" },
+            { "key": "network", "value": "bsc" }
+          ]
+        }
+      }
+    }
+  ]
+}
