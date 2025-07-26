@@ -191,20 +191,3 @@ Then test the endpoints using Postman or cURL.
 4. Replace `{{token}}` with the JWT returned from the login endpoint.
 
 ---
-
-## **Next Steps**
-
-- Add **middleware for JWT authentication** on wallet routes.
-- Extend with ERC-20 token support (e.g., `sendTokenUniversal`).
-- Add webhooks or event listeners for real-time transaction tracking.
-
-```
-
----
-
-### **Do you want me to add JWT Authentication Middleware (Express) so all wallet routes require a valid token automatically?**
-```
-
-```
-
-```
