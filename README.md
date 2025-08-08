@@ -122,7 +122,7 @@ COVALENT_API_KEY=your_covalent_api_key
   "sender": "+2348101234567",
   "recipient": "0xRecipientWalletAddress",
   "amount": "0.01",
-  "network": "bsc"
+  "network": "base"
 }
 ```
 
@@ -138,7 +138,7 @@ COVALENT_API_KEY=your_covalent_api_key
 
 ### **5. Get Transaction History**
 
-**GET** `http://localhost:3000/api/wallet/history?identifier=+2348101234567&network=bsc`
+**GET** `http://localhost:3000/api/wallet/history?identifier=0xA16A50A42F6050E5d3386768Ae4D4642E8B783E1&network=base`
 
 **Response**
 
